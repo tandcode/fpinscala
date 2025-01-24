@@ -1,21 +1,27 @@
 package fpinscala.exercises.errorhandling
 
 // Hide std library `Option` since we are writing our own in this chapter
-import scala.{Option as _, Some as _, None as _}
+import fpinscala.exercises.errorhandling.Option.{sequence, variance}
+
+import scala.{None as _, Option as _, Some as _}
 
 enum Option[+A]:
   case Some(get: A)
   case None
 
-  def map[B](f: A => B): Option[B] = ???
+  def map[B](f: A => B): Option[B] = this match
+    case None => None
+    case Some(value) => Some(f(value))
 
-  def getOrElse[B>:A](default: => B): B = ???
+  def getOrElse[B>:A](default: => B): B = this match
+    case None => default
+    case Some(value) => value
 
-  def flatMap[B](f: A => Option[B]): Option[B] = ???
+  def flatMap[B](f: A => Option[B]): Option[B] = map(f).getOrElse(None)
 
-  def orElse[B>:A](ob: => Option[B]): Option[B] = ???
+  def orElse[B>:A](ob: => Option[B]): Option[B] = map(v => if v == None then None else Some(v)).getOrElse(ob)
 
-  def filter(f: A => Boolean): Option[A] = ???
+  def filter(f: A => Boolean): Option[A] = map(v => if f(v) then Some(v) else None).getOrElse(None)
 
 object Option:
 
@@ -36,10 +42,27 @@ object Option:
     if xs.isEmpty then None
     else Some(xs.sum / xs.length)
 
-  def variance(xs: Seq[Double]): Option[Double] = ???
+  def variance(xs: Seq[Double]): Option[Double] = mean(xs)
+    .map(m => xs.map(x => math.pow(x - m, 2)))
+    .flatMap(v => mean(v))
 
-  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = ???
+  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = a.flatMap(av => b.map(bv => f(av, bv)))
 
-  def sequence[A](as: List[Option[A]]): Option[List[A]] = ???
+  def sequence[A](as: List[Option[A]]): Option[List[A]] = as match
+    case Nil => Some(Nil)
+    case ls => ls.foldRight(Some(List.empty[A])) { case (op, res) => op.flatMap(v => res.map(r => v :: r)) }
 
-  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = ???
+  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = as match
+    case Nil => Some(Nil)
+    case ls => ls.foldRight(Some(List.empty[B])) { case (op, res) => f(op).flatMap(v => res.map(r => v :: r)) }
+
+  def sequenceViaTraverse[A](as: List[Option[A]]): Option[List[A]] = traverse(as)(identity)
+
+object Test:
+  def main(args: Array[String]): Unit = {
+    val value = List(2)
+    import cats.implicits.*
+    val some = value.some
+    val ints = Seq(2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
+    println(ints)
+  }

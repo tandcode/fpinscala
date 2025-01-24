@@ -85,7 +85,10 @@ class OptionSuite extends PropSuite:
     val expected: Option[List[Int]] =
       if optionList.contains(None) then None
       else Some(optionList.flatMap(_.map(List(_)).getOrElse(List.empty[Int])))
-    assertEquals(Option.sequence(optionList), expected)
+    val value = Option.sequence(optionList)
+    println(s"Actual  : $value")
+    println(s"Expected: $expected")
+    assertEquals(value, expected)
 
   test("Option.traverse")(genStringList): list =>
     val expected: Option[List[Int]] =
